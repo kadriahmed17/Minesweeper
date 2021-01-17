@@ -508,10 +508,11 @@ int main(int argc, char** argv) {
 	double time_elapsed = 0.0; //initialisierung und deklarierung
 	//Spieldauer bestimmen
 	time_t starttime = time(NULL);  //StartZeit
-
+    int count_moves = 1;
 	int sig = start_play(board, status, rows, cols, n_mines);
 	while (sig != GAME_WON && sig != GAME_LOST) {
 		sig = start_play(board, status, rows, cols, n_mines);
+        count_moves++;
 	}
 	time_t endtime = time(NULL);  //EndZeit
 
@@ -520,11 +521,10 @@ int main(int argc, char** argv) {
 
        For example, ceil(0.5) is 1.0, and ceil(-0.5) is 0.0.
      */
-    printf("elapsed = %lf\n",time_elapsed);
     int minutes =  (int)ceil(time_elapsed) / 60;
     int seconds = (int)ceil(time_elapsed) % 60;
-
-	printf("\nThe game lasted : %d Minuten %d Sekunden\n", minutes,seconds); //Spieldauer auf dem Bildschirm ausgeben
+    printf("\nnumber of moves: %d\n",count_moves);
+	printf("The game lasted : %d Minuten %d Sekunden\n", minutes,seconds); //Spieldauer auf dem Bildschirm ausgeben
     
 	save_game(datei, argv[1], board, status, rows, cols);
 	for (int i = 0; i < rows; i++) {
