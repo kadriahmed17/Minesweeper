@@ -471,9 +471,11 @@ int main(int argc, char** argv) {
 
 	if (rows > 26 || rows < 10) { //Anzahl der Zeilen soll zwischen 10 und 26 sein
 		printf("invalid rows number!\n");
+        return 1;
 	}
 	if (cols > 26 || cols < 10) { //Anzahl der Spalten soll zwischen 10 und 26 sein
 		printf("invalid cols number!\n");
+        return 1;
 	}
 	//Speicher reservieren
 	int** board = (int**) malloc(sizeof(int*) * rows);
