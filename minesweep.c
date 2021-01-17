@@ -5,6 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <math.h>
 /* Board entries */
 
 #define NO_ENTRY -1
@@ -32,10 +33,6 @@ Open: to open a cell\n\
 Exit: to abandon game\n\
 ~>  \0";
 
-/*
- FALSE -> Covered cell
- TRUE -> Uncovered cell
- */
 // Funktionsname: build_field
 // Kurzbeschreibung der Aufgabe der Funktion : Spielfeld initialisieren
 // Eingabeparameter mit zulässigem Wertebereich: board , status ,rows , cols
@@ -55,20 +52,19 @@ void build_field(int** board, int** status, int rows, int cols) {
 	}
 }
 // Funktionsname: randomize_n_mines
-// Kurzbeschreibung der Aufgabe der Funktion : Zufallige Anzahl von Minen bekommen die insgesamt zwischen 10% und 25% des Spielfeldes belegen sein soll
+// Kurzbeschreibung der Aufgabe der Funktion : Zufaellige Anzahl von Minen bekommen, die insgesamt zwischen 10% und 25% des Spielfeldes belegen sein sollen
 // Eingabeparameter mit zulässigem Wertebereich: n_mines ,rows ,cols
 // Rückgabeparameter mit zulässigem Wertebereich: n_mines
 // Autor: Mohamed Aziz Labbouz
 // Version: eclipse
 // Datum der letzten Änderung: 03/12/2020
-int randomize_n_mines(int n_mines, int rows, int cols) {
+void randomize_n_mines(int* n_mines, int rows, int cols) {
 	int min = 0;
 	int max = 0;
 	srand(time(NULL));
 	min = (rows * cols) / 10; //Minimum Anzahl von Minen die 10% des Spielfeldes belegen
 	max = (rows * cols) / 4; //Maximum Anzahl von Minen 25% des Spielfeldes belegen
-	n_mines = min + rand() % (max - min + 1); //ZUfaellige Anzahl von Minen bekommen
-	return n_mines;
+	*n_mines = min + rand() % (max - min + 1); //ZUfaellige Anzahl von Minen bekommen
 }
 // Funktionsname: build_mines
 // Kurzbeschreibung der Aufgabe der Funktion : Die Minen werden in Zufaellige Feldern aufgeteilt
@@ -107,7 +103,7 @@ int calculate_adjacent_mines(int** board, int rows, int cols, int x, int y) {
 	return counter;
 }
 // Funktionsname: show_mines
-// Kurzbeschreibung der Aufgabe der Funktion ; Minen auf dem Spielfeld anzeigen
+// Kurzbeschreibung der Aufgabe der Funktion : Minen auf dem Spielfeld anzeigen
 // Eingabeparameter mit zulässigem Wertebereich: board , status ,rows,cols
 // Rückgabeparameter mit zulässigem Wertebereich: keine
 // Autor: Mohamed Aziz Labbouz
@@ -139,7 +135,7 @@ void output_board(int** board, int** status, int rows, int cols) {
 		printf(" %d  ", (i + 1)); //  Zahlen für die Spaltenkoordinaten ausgeben
 	}
 	printf("\n");
-
+    
 	for (int i = 0; i < rows; i++) {
 		printf("- %c |", c + i); //Buchstaben für die Zeilenkoordinaten
 		for (int j = 0; j < cols; j++) {
@@ -182,6 +178,30 @@ void output_board(int** board, int** status, int rows, int cols) {
 		printf("\n");
 	}
 }
+
+// Funktionsname: check_winner
+// Kurzbeschreibung der Aufgabe der Funktion : Funktion um zu wissen, dass man gewonnen hat oder nicht
+// Eingabeparameter mit zulässigem Wertebereich: board,status,rows,cols,n_mines
+// Rückgabeparameter mit zulässigem Wertebereich: 1 oder 0
+// Autor: Mohamed Aziz Labbouz
+// Version: eclipse
+// Datum der letzten Änderung: 23/12/2020
+int check_winner(int** board, int** status, int rows, int cols, int n_mines) {
+	int counter = 0; //Initialisierung und deklarierung
+	int i = 0;
+	int j = 0;
+	for (i = 0; i < rows; i++) {
+		for (j = 0; j < cols; j++) {
+			if (board[i][j] == MINE && status[i][j] == MARKED)//wenn das feld eine markierte Mine
+				counter++;
+		}
+	}
+	if (n_mines == counter)
+		return 1;
+	else
+		return 0;
+}
+
 // Funktionsname: mark_cell
 // Kurzbeschreibung der Aufgabe der Funktion : Feld markieren / Markierung entfernen
 // Eingabeparameter mit zulässigem Wertebereich: board ,status ,rows,cols
@@ -189,9 +209,9 @@ void output_board(int** board, int** status, int rows, int cols) {
 // Autor: Mohamed Aziz Labbouz
 // Version: eclipse
 // Datum der letzten Änderung: 06/12/2020
-int mark_cell(int** board, int** status, int rows, int cols) {
+int mark_cell(int** board, int** status, int rows, int cols,int n_mines) {
 	int j = 0; //Initialisierung und deklarierung von j
-	char cell[10] = { 0 }; //Initialisierung und deklarierung von cell
+	char cell[10] = ""; //Initialisierung und deklarierung von cell
 	int xRow = 0;
 	int i = 0;
 	int yCol = 0;
@@ -199,20 +219,20 @@ int mark_cell(int** board, int** status, int rows, int cols) {
 
 	printf("Select a cell to mark:\t");
 	fgets(cell, 10, stdin); //einlesen von standard input und speichern es in Cell
-	xRow = cell[0];
-	if (xRow < 'A') {
+	xRow = cell[0];	
+	xRow %= 'A'; // xRow = xRow % 'A' = xRow % 64
+    if (xRow < 0 || xRow >= rows) {
 		printf("invalid input for X\n");
-		exit(1);
+	    return GAME_ONGOING;	
 	}
-	xRow %= 'A';
 	for (i = 1; cell[i]; i++) {
 		if (isdigit(cell[i])) //Uberprufen ob das Charakter ein zahl Charakter ist
 			rest[j++] = cell[i];
 	}
 	yCol = atoi(rest); //Integer wert von string bekommen
-	if (yCol < 1) {
+	if (yCol < 1 || yCol > cols) {
 		printf("invalid input for Y\n");
-		exit(1);
+	    return GAME_ONGOING;	
 	}
 	// Falle von Markieren ein Feld
 	if (board[xRow][yCol - 1] == OPEN || board[xRow][yCol - 1] == FREED) { //wenn das feld schon aufgedeckt ist
@@ -223,6 +243,16 @@ int mark_cell(int** board, int** status, int rows, int cols) {
 	} else {
 		status[xRow][yCol - 1] = MARKED; //das feld markieren
 		output_board(board, status, rows, cols);
+        int win = check_winner(board, status, rows, cols, n_mines);
+		if (win) { //wenn das Spiel gewonnen ist
+			show_mines(board, status, rows, cols);
+			output_board(board, status, rows, cols);
+			printf("you won!\n");
+			return GAME_WON;
+		} else
+			//wenn das Spiel noch nicht gewonnen ist
+			output_board(board, status, rows, cols);
+		return GAME_ONGOING;
 	}
 	return GAME_ONGOING;
 }
@@ -242,8 +272,7 @@ int check_proximity(int** board, int** status, int rows, int cols, int x, int y)
 		if (x + i >= 0 && x + i < rows) { // Überprüfen , ob die Nachbarkoordinaten sind innerhalb der Array-Grenzen
 			for (j = -1; j <= 1; j++) {
 				if ((i != 0 || j != 0) && y + j >= 0 && y + j < cols) { // Überprüfen , ob die Nachbarkoordinaten sind innerhalb der Array-Grenzen , das gewaehltes Feld wird nicht betrachtet
-					if (board[x + i][y + j] == MINE
-							|| status[x + i][y + j] == MARKED) { //wenn ein Feld markiert oder drauf eien Mine gibt
+					if (board[x + i][y + j] == MINE || status[x + i][y + j] == MARKED) { //wenn ein Feld markiert oder darauf eien Mine gibt
 						counter++;
 					}
 				}
@@ -259,8 +288,7 @@ int check_proximity(int** board, int** status, int rows, int cols, int x, int y)
 // Autor: Mohamed Aziz Labbouz
 // Version: eclipse
 // Datum der letzten Änderung: 23/12/2020
-void free_adjacent_cells(int** board, int** status, int rows, int cols, int x,
-		int y) {
+void free_adjacent_cells(int** board, int** status, int rows, int cols, int x, int y) {
 	int i = 0; //initialisierung und deklarierung
 	int j = 0;
 	for (i = -1; i <= 1; i++) {
@@ -268,19 +296,15 @@ void free_adjacent_cells(int** board, int** status, int rows, int cols, int x,
 			if (i == 0 && j == 0) //Das Gewaehltes feld wird nicht betrachtet , springen zu naechste iteration
 				continue;
 			else if (x + i >= 0 && x + i < rows && y + j >= 0 && y + j < cols) { // Überprüfen , ob die Nachbarkoordinaten sind innerhalb der Array-Grenzen
-				if (board[x + i][y + j] != MINE
-						&& status[x + i][y + j] != MARKED) {//wenn das feld weder eine Mine oder markiert ist
-					if (board[x + i][y + j] != OPEN
-							&& board[x + i][y + j] != FREED) {//wenn das feld noch nicht aufgedeckt ist
-						if (check_proximity(board, status, rows, cols, x + i, //Wenn ein markiertes feld oder eine Mine herum liegt
-								y + j) > 0) {
-							board[x + i][y + j] = FREED;
+				if (board[x + i][y + j] != MINE && status[x + i][y + j] != MARKED) {//wenn das feld weder eine Mine oder markiert ist
+					if (board[x + i][y + j] != OPEN && board[x + i][y + j] != FREED) {//wenn das feld noch nicht aufgedeckt ist
+						if (check_proximity(board, status, rows, cols, x + i, y + j) > 0) { //Wenn ein markiertes feld oder eine Mine herum liegt
+                            board[x + i][y + j] = FREED;
 							status[x + i][y + j] = SHOW_M_SURROUNDING;
 						} else {
 							board[x + i][y + j] = FREED;
 							status[x + i][y + j] = SHOW;
-							free_adjacent_cells(board, status, rows, cols,
-									x + i, y + j);
+							free_adjacent_cells(board, status, rows, cols, x + i, y + j);
 						}
 					}
 				}
@@ -288,28 +312,7 @@ void free_adjacent_cells(int** board, int** status, int rows, int cols, int x,
 		}
 	}
 }
-// Funktionsname: check_winner
-// Kurzbeschreibung der Aufgabe der Funktion : Funktion um wissen das man gewonnen hat oder nicht
-// Eingabeparameter mit zulässigem Wertebereich: board,status,rows,cols,n_mines
-// Rückgabeparameter mit zulässigem Wertebereich: 1 oder 0
-// Autor: Mohamed Aziz Labbouz
-// Version: eclipse
-// Datum der letzten Änderung: 23/12/2020
-int check_winner(int** board, int** status, int rows, int cols, int n_mines) {
-	int counter = 0; //Initialisierung und deklarierung
-	int i = 0;
-	int j = 0;
-	for (i = 0; i < rows; i++) {
-		for (j = 0; j < cols; j++) {
-			if (board[i][j] == MINE && status[i][j] == MARKED)//wenn das feld ein markierte Mine
-				counter++;
-		}
-	}
-	if (rows * cols - n_mines == counter)
-		return 1;
-	else
-		return 0;
-}
+
 // Funktionsname:open_cell
 // Kurzbeschreibung der Aufgabe der Funktion: Feld aufdecken
 // Eingabeparameter mit zulässigem Wertebereich: board ,status,rows,cols,n_mines
@@ -327,20 +330,21 @@ int open_cell(int** board, int** status, int rows, int cols, int n_mines) {
 	printf("Select a cell to open:\t");
 	fgets(cell, 10, stdin); //einlesen von standard input und speichern es in Cell
 	xRow = cell[0];
-	if (xRow < 'A') {
+    xRow %= 'A';
+    if (xRow < 0 || xRow >= rows) {
 		printf("invalid input for X\n");
-		exit(1);
+		return GAME_ONGOING;
 	}
-	xRow %= 'A';
+
 	for (i = 1; cell[i]; i++) {
 		if (isdigit(cell[i])) //Uberprufen ob das Charakter ein zahl Charakter ist
 			rest[j++] = cell[i];
 	}
 	yCol = atoi(rest); //Integer wert von string bekommen
-	if (yCol < 1) {
+	if (yCol < 1 || yCol > cols) {
 		printf("invalid input for Y\n");
-		exit(1);
-	}
+	    return GAME_ONGOING;
+    }
 	// Falle von Oeffnen ein Feld
 
 	//Wenn ein feld bereits markiert ist
@@ -356,16 +360,7 @@ int open_cell(int** board, int** status, int rows, int cols, int n_mines) {
 		board[xRow][yCol - 1] = OPEN;
 		status[xRow][yCol - 1] = SHOW;
 		free_adjacent_cells(board, status, rows, cols, xRow, yCol - 1);
-		int win = check_winner(board, status, rows, cols, n_mines);
-		if (win) { //wenn das Spiel gewonnen ist
-			show_mines(board, status, rows, cols);
-			output_board(board, status, rows, cols);
-			printf("you won!\n");
-			return GAME_WON;
-		} else
-			//wenn das Spiel noch nicht gewonnen ist
-			output_board(board, status, rows, cols);
-		return GAME_ONGOING;
+        output_board(board,status,rows,cols);    
 	}
 	//wenn auf dem Feld eine Mine gibt
 	else {
@@ -447,7 +442,7 @@ int start_play(int** board, int** status, int rows, int cols, int n_mines) {
 	char cell[10] = { 0 }; //initialisierung und deklarierung
 	fgets(cell, 10, stdin); //einlesen von standard input und speichern es in Cell
 	if (!strncmp(cell, "Mark", 4)) { //Vergleichen zwischen cell und Mark
-		return mark_cell(board, status, rows, cols);
+		return mark_cell(board, status, rows, cols,n_mines);
 	} else if (!strncmp(cell, "Open", 4)) { //Vergleichen zwischen cell und Open
 		return open_cell(board, status, rows, cols, n_mines);
 	} else if (!strncmp(cell, "Exit", 4)) { //Vergleichen zwischen cell und Exit
@@ -502,7 +497,7 @@ int main(int argc, char** argv) {
 
 	build_field(board, status, rows, cols);
 
-	n_mines = randomize_n_mines(n_mines, rows, cols);
+	randomize_n_mines(&n_mines, rows, cols);
 	build_mines(board, rows, cols, n_mines);
 
 	save_game(datei, argv[1], board, status, rows, cols);
@@ -518,9 +513,17 @@ int main(int argc, char** argv) {
 	}
 	time_t endtime = time(NULL);  //EndZeit
 
-	time_elapsed += ((double) (endtime - starttime) / 60);
+	time_elapsed += ((double) (endtime - starttime));
+    /*These functions return the smallest integral value that is not less than x.
 
-	printf("\nThe game lasted : %0.2lf Minuten\n", time_elapsed); //Spieldauer auf dem Bildschirm ausgeben
+       For example, ceil(0.5) is 1.0, and ceil(-0.5) is 0.0.
+     */
+    printf("elapsed = %lf\n",time_elapsed);
+    int minutes =  (int)ceil(time_elapsed) / 60;
+    int seconds = (int)ceil(time_elapsed) % 60;
+
+	printf("\nThe game lasted : %d Minuten %d Sekunden\n", minutes,seconds); //Spieldauer auf dem Bildschirm ausgeben
+    
 	save_game(datei, argv[1], board, status, rows, cols);
 	for (int i = 0; i < rows; i++) {
 		free(board[i]); //Speicher freigeben
